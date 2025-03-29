@@ -2,9 +2,12 @@
 
 [![Go Reference](https://pkg.go.dev/badge/github.com/picatz/iters.svg)](https://pkg.go.dev/github.com/picatz/iters)
 
-A collection of functions for working with [iterators] in Go.
+A collection of functions for working with [iterators] in Go — exploring a "[comprehensive streams API]" 
+that's currently missing from the standard library (or any _official_ experimental package [so far]).
 
 [iterators]: https://pkg.go.dev/iter
+[comprehensive streams API]: https://github.com/golang/go/discussions/47203#discussioncomment-1034432
+[so far]: https://github.com/golang/go/issues/61898
 
 ## `iters.Map`
 
