@@ -149,3 +149,19 @@ fmt.Println(totalLegs)
 // Output:
 // 10
 ```
+
+## `iters.Contains`
+
+The `iters.Contains` function checks if a specific (`comparable`) value exists within a `iter.Seq`. It returns `true` if the value is found, and `false` otherwise.
+
+```go
+numbers := []int{1, 2, 3, 4, 5}
+
+hasThree := iters.Contains(
+    slices.Values(numbers),
+    3,
+)
+fmt.Println(hasThree)
+// Output:
+// true 
+```
