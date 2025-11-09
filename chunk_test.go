@@ -64,6 +64,51 @@ func ExampleChunk_keyValuePairs() {
 	// [["A fruit" "Another fruit"] ["A vegetable" "A sweet fruit"] ["A protein source"]]
 }
 
+func ExampleChunkFunc_splitOnZero() {
+	values := []int{1, 2, 0, 3, 4, 0, 5}
+
+	chunks := iters.ChunkFunc(
+		slices.Values(values),
+		func(v int) bool { return v == 0 },
+	)
+
+	fmt.Println(slices.Collect(chunks))
+	// Output:
+	// [[1 2] [0 3 4] [0 5]]
+}
+
+func ExampleChunkFunc2_splitPairs() {
+	seq2 := func(yield func(string, int) bool) {
+		data := []struct {
+			Key string
+			Val int
+		}{
+			{"a", 1},
+			{"b", 2},
+			{"b", 3},
+			{"c", 4},
+		}
+		for _, item := range data {
+			if !yield(item.Key, item.Val) {
+				return
+			}
+		}
+	}
+
+	chunks := iters.ChunkFunc2(
+		seq2,
+		func(k string, _ int) bool { return k == "b" },
+	)
+
+	for keys, values := range chunks {
+		fmt.Printf("%q %v\n", keys, values)
+	}
+	// Output:
+	// ["a"] [1]
+	// ["b"] [2]
+	// ["b" "c"] [3 4]
+}
+
 type chunkTableTest[T any] struct {
 	name     string
 	input    []T
@@ -223,6 +268,125 @@ func TestChunk2(t *testing.T) {
 				{1, 2},
 				{3, 4},
 				{5},
+			},
+		},
+	}
+
+	for _, test := range tests {
+		test.Run(t)
+	}
+}
+
+type chunkFuncTableTest[T comparable] struct {
+	name     string
+	input    []T
+	pred     func(T) bool
+	expected [][]T
+}
+
+func (test chunkFuncTableTest[T]) Run(t *testing.T) {
+	runChunkFuncTableTest(t, test)
+}
+
+func runChunkFuncTableTest[T comparable](t *testing.T, test chunkFuncTableTest[T]) {
+	t.Run(test.name, func(t *testing.T) {
+		got := slices.Collect(iters.ChunkFunc(slices.Values(test.input), test.pred))
+		if !slices.EqualFunc(got, test.expected, func(a, b []T) bool {
+			return slices.Equal(a, b)
+		}) {
+			t.Fatalf("ChunkFunc: expected %v, got %v", test.expected, got)
+		}
+	})
+}
+
+type chunkFunc2TableTest[K comparable, V comparable] struct {
+	name  string
+	input []struct {
+		key K
+		val V
+	}
+	pred           func(K, V) bool
+	expectedKeys   [][]K
+	expectedValues [][]V
+}
+
+func (test chunkFunc2TableTest[K, V]) Run(t *testing.T) {
+	runChunkFunc2TableTest(t, test)
+}
+
+func runChunkFunc2TableTest[K comparable, V comparable](t *testing.T, test chunkFunc2TableTest[K, V]) {
+	t.Run(test.name, func(t *testing.T) {
+		seq2 := func(yield func(K, V) bool) {
+			for _, pair := range test.input {
+				if !yield(pair.key, pair.val) {
+					return
+				}
+			}
+		}
+
+		var gotKeys [][]K
+		var gotValues [][]V
+		for keys, values := range iters.ChunkFunc2(seq2, test.pred) {
+			gotKeys = append(gotKeys, keys)
+			gotValues = append(gotValues, values)
+		}
+
+		if !slices.EqualFunc(gotKeys, test.expectedKeys, func(a, b []K) bool { return slices.Equal(a, b) }) {
+			t.Fatalf("ChunkFunc2: expected keys %v, got %v", test.expectedKeys, gotKeys)
+		}
+		if !slices.EqualFunc(gotValues, test.expectedValues, func(a, b []V) bool { return slices.Equal(a, b) }) {
+			t.Fatalf("ChunkFunc2: expected values %v, got %v", test.expectedValues, gotValues)
+		}
+	})
+}
+
+func TestChunkFunc(t *testing.T) {
+	tests := []runnableTest{
+		chunkFuncTableTest[int]{
+			name:  "split on zero",
+			input: []int{1, 2, 0, 3},
+			pred:  func(v int) bool { return v == 0 },
+			expected: [][]int{
+				{1, 2},
+				{0, 3},
+			},
+		},
+		chunkFuncTableTest[int]{
+			name:     "predicate never true",
+			input:    []int{1, 2},
+			pred:     func(int) bool { return false },
+			expected: [][]int{{1, 2}},
+		},
+	}
+
+	for _, test := range tests {
+		test.Run(t)
+	}
+}
+
+func TestChunkFunc2(t *testing.T) {
+	tests := []runnableTest{
+		chunkFunc2TableTest[string, int]{
+			name: "split when key repeats",
+			input: []struct {
+				key string
+				val int
+			}{
+				{"a", 1},
+				{"b", 2},
+				{"b", 3},
+				{"c", 4},
+			},
+			pred: func(k string, _ int) bool { return k == "b" },
+			expectedKeys: [][]string{
+				{"a"},
+				{"b"},
+				{"b", "c"},
+			},
+			expectedValues: [][]int{
+				{1},
+				{2},
+				{3, 4},
 			},
 		},
 	}

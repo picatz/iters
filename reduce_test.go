@@ -2,6 +2,7 @@ package iters_test
 
 import (
 	"fmt"
+	"maps"
 	"slices"
 	"testing"
 
@@ -25,6 +26,25 @@ func ExampleReduce_sum() {
 
 	fmt.Println(sum)
 	// Output: 15
+}
+
+func ExampleReduce2_collect() {
+	input := map[string]int{
+		"a": 1,
+		"b": 2,
+	}
+
+	sum := iters.Reduce2(
+		maps.All(input),
+		func(acc int, key string, value int) int {
+			return acc + value
+		},
+		0,
+	)
+
+	fmt.Println(sum)
+	// Output:
+	// 3
 }
 
 // reduceTableTest is a struct used for testing the Reduce function.
@@ -96,6 +116,46 @@ func TestReduce(t *testing.T) {
 	}
 
 	// Run each test in the slice.
+	for _, test := range tests {
+		test.Run(t)
+	}
+}
+
+type reduce2TableTest[K comparable, V comparable, R comparable] struct {
+	name     string
+	input    map[K]V
+	fn       func(R, K, V) R
+	initial  R
+	expected R
+}
+
+func (test reduce2TableTest[K, V, R]) Run(t *testing.T) {
+	runReduce2TableTest(t, test)
+}
+
+func runReduce2TableTest[K comparable, V comparable, R comparable](t *testing.T, test reduce2TableTest[K, V, R]) {
+	t.Run(test.name, func(t *testing.T) {
+		got := iters.Reduce2(maps.All(test.input), test.fn, test.initial)
+		if got != test.expected {
+			t.Fatalf("Reduce2: expected %v, got %v", test.expected, got)
+		}
+	})
+}
+
+func TestReduce2(t *testing.T) {
+	tests := []runnableTest{
+		reduce2TableTest[string, int, int]{
+			name: "sum values",
+			input: map[string]int{
+				"a": 1,
+				"b": 2,
+			},
+			fn:       func(acc int, _ string, v int) int { return acc + v },
+			initial:  0,
+			expected: 3,
+		},
+	}
+
 	for _, test := range tests {
 		test.Run(t)
 	}

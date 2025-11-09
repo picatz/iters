@@ -2,9 +2,8 @@ package iters
 
 import "iter"
 
-// Concat concatenates multiple sequences into a single sequence. It takes
-// a variable number of sequences as input and returns a new sequence that
-// yields elements from each input sequence in order.
+// Concat returns a sequence that yields every element from seqs in order.
+// Iteration stops early if the consumer stops pulling values.
 func Concat[T any](seqs ...iter.Seq[T]) iter.Seq[T] {
 	return func(yield func(T) bool) {
 		for _, seq := range seqs {
@@ -17,9 +16,8 @@ func Concat[T any](seqs ...iter.Seq[T]) iter.Seq[T] {
 	}
 }
 
-// Concat2 concatenates multiple sequences of pairs of values, into a single
-// sequence of pairs of values. It takes a variable number of sequences as input and returns
-// a new sequence that yields pairs of values from each input sequence in order.
+// Concat2 is the keyed companion to Concat; it streams every pair from seqs2
+// in order.
 func Concat2[K, V any](seqs2 ...iter.Seq2[K, V]) iter.Seq2[K, V] {
 	return func(yield func(K, V) bool) {
 		for _, seq2 := range seqs2 {

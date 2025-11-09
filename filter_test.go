@@ -2,6 +2,7 @@ package iters_test
 
 import (
 	"fmt"
+	"maps"
 	"slices"
 	"testing"
 
@@ -59,6 +60,25 @@ func ExampleFilter_structs() {
 	fmt.Println(result)
 	// Output:
 	// [{cat 4} {dog 4}]
+}
+
+func ExampleFilter2_keyValuePairs() {
+	fruits := map[string]string{
+		"apple":  "fruit",
+		"carrot": "vegetable",
+		"pear":   "fruit",
+	}
+
+	filtered := iters.Filter2(
+		maps.All(fruits),
+		func(key, value string) bool {
+			return value == "fruit" && key != "pear"
+		},
+	)
+
+	fmt.Println(maps.Collect(filtered))
+	// Output:
+	// map[apple:fruit]
 }
 
 // filterTableTest is a struct used for testing the Filter function.
@@ -133,6 +153,48 @@ func TestFilter(t *testing.T) {
 				"elephant",
 			},
 			eqFn: slices.Equal[[]string],
+		},
+	}
+
+	for _, test := range tests {
+		test.Run(t)
+	}
+}
+
+type filter2TableTest[K comparable, V comparable] struct {
+	name     string
+	input    map[K]V
+	filterFn func(K, V) bool
+	expected map[K]V
+}
+
+func (test filter2TableTest[K, V]) Run(t *testing.T) {
+	runFilter2TableTest(t, test)
+}
+
+func runFilter2TableTest[K comparable, V comparable](t *testing.T, test filter2TableTest[K, V]) {
+	t.Run(test.name, func(t *testing.T) {
+		got := maps.Collect(iters.Filter2(maps.All(test.input), test.filterFn))
+		if !maps.Equal(got, test.expected) {
+			t.Fatalf("Filter2: expected %v, got %v", test.expected, got)
+		}
+	})
+}
+
+func TestFilter2(t *testing.T) {
+	tests := []runnableTest{
+		filter2TableTest[string, string]{
+			name: "select fruits",
+			input: map[string]string{
+				"apple":  "fruit",
+				"carrot": "vegetable",
+				"pear":   "fruit",
+			},
+			filterFn: func(k, v string) bool { return v == "fruit" },
+			expected: map[string]string{
+				"apple": "fruit",
+				"pear":  "fruit",
+			},
 		},
 	}
 

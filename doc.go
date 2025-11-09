@@ -1,5 +1,3 @@
-// Package iters provides a collection of functions for
-// working with [iterators] over sequences.
-//
-// [iterators]: https://pkg.go.dev/iter
+// Package iters provides building blocks for composing iter.Seq and
+// iter.Seq2 pipelines.
 package iters
